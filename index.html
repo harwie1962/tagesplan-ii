@@ -366,7 +366,6 @@
   <body>
   <div class="container">
     <div class="header">
-      <!-- Offset-Steuerung: nur diese oberste, aufklappbare Box beibehalten -->
       <details class="panel panel-top" id="offsetPanel" open>
         <summary>
           <span class="panel-title">⏱️ Verschlafen-Modus (Zeitversatz)</span>
@@ -404,6 +403,39 @@
           </div>
         </div>
       </details>
+      <div class="panel panel-top">
+        <h3>⏱️ Verschlafen-Modus (Zeitversatz)</h3>
+
+        <div class="row">
+          <label for="anchorTime">Ich bin aufgestanden um</label>
+          <input type="time" id="anchorTime" placeholder="07:30" />
+          <button class="btn btn-primary" onclick="applyOffsetFromAnchor()">Offset setzen</button>
+          <button class="btn btn-secondary" onclick="resetOffset()">Offset zurücksetzen</button>
+        </div>
+
+        <div class="row">
+          <input type="checkbox" id="applyAllDay" onchange="toggleApplyAllDay()" />
+          <label for="applyAllDay" style="cursor:pointer;">
+            Offset auf <strong>alle</strong> Zeiten anwenden (sonst nur morgens bis 12:00)
+          </label>
+        </div>
+
+        <div class="row" style="align-items:center;">
+          <span class="small-pill" title="Verschiebt Termine AB 12:00 (Mittag + alles danach)">
+            🌙 Nachmittag (ab 12:00): <span id="afternoonLabel">0 min</span>
+          </span>
+          <button class="btn btn-primary" onclick="shiftAfternoon(-15)">−15</button>
+          <button class="btn btn-primary" onclick="shiftAfternoon(+15)">+15</button>
+          <button class="btn btn-secondary" onclick="resetAfternoonShift()">Reset</button>
+        </div>
+
+        <div class="hint">
+          <div>• Standard: Morgen-Offset wirkt nur auf Zeiten <code>vor 12:00</code>.</div>
+          <div>• Haken an: Morgen-Offset wirkt auf <code>alle</code> Zeiten.</div>
+          <div>• Zusätzlich kannst du <strong>ab 12:00</strong> alles nach vorn/hinten schieben (−15 / +15).</div>
+          <div>• Speichert automatisch im Browser (localStorage).</div>
+        </div>
+      </div>
 
       <h1>🍽️ Dein Tagesplan</h1>
       <div class="current-time" id="currentTime">00:00:00</div>

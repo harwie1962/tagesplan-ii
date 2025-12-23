@@ -16,10 +16,7 @@ window.Sound = (function () {
       const TYPE = "triangle";
 
       const notes = [
-        { f: 880, t: 0.00, d: 0.12 },
-        { f: 988, t: 0.14, d: 0.12 },
-        { f: 784, t: 0.28, d: 0.16 }
-        // C3 1/16, D3 1/16, G3 1/8, Bb3 1/4 bei Tempo 80 im 2/4-Takt
+       // C3 1/16, D3 1/16, G3 1/8, Bb3 1/4 bei Tempo 80 im 2/4-Takt
         { f: 130.81, t: 0.00,   d: 0.1875 },
         { f: 146.83, t: 0.1875, d: 0.1875 },
         { f: 196.00, t: 0.3750, d: 0.3750 },

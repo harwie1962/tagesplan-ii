@@ -14,11 +14,15 @@ window.Sound = (function () {
 
       const VOLUME = 0.30;
       const TYPE = "triangle";
+      const BPM = 80;
+      const QUARTER_DURATION = 60 / BPM; // 1/4 Note in Sekunden bei 2/4-Takt
 
       const notes = [
-        { f: 880, t: 0.00, d: 0.12 },
-        { f: 988, t: 0.14, d: 0.12 },
-        { f: 784, t: 0.28, d: 0.16 }
+        // C3 1/16, D3 1/16, G3 1/8, Bb3 1/4 bei Tempo 80 im 2/4-Takt
+        { f: 130.81, t: 0.00, d: QUARTER_DURATION / 4 },
+        { f: 146.83, t: QUARTER_DURATION / 4, d: QUARTER_DURATION / 4 },
+        { f: 196.00, t: QUARTER_DURATION / 2, d: QUARTER_DURATION / 2 },
+        { f: 233.08, t: QUARTER_DURATION, d: QUARTER_DURATION }
       ];
 
       notes.forEach(n => {

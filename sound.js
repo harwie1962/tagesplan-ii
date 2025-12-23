@@ -12,7 +12,7 @@ window.Sound = (function () {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === "suspended") audioContext.resume();
 
-      const VOLUME = 0.30;
+      const VOLUME = 0.70;
       const TYPE = "triangle";
       const BPM = 80;
       const QUARTER = 60 / BPM; // Dauer einer 1/4-Note bei 80 BPM

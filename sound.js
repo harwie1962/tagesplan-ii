@@ -14,12 +14,26 @@ window.Sound = (function () {
 
       const VOLUME = 0.30;
       const TYPE = "triangle";
+      const BPM = 80;
+      const QUARTER = 60 / BPM; // Dauer einer 1/4-Note bei 80 BPM
+      const SIXTEENTH = QUARTER / 4;
+      const EIGHTH = QUARTER / 2;
 
-      const notes = [
-        { f: 880, t: 0.00, d: 0.12 },
-        { f: 988, t: 0.14, d: 0.12 },
-        { f: 784, t: 0.28, d: 0.16 }
+      // Neue Tonfolge: C3 1/16, D3 1/16, G3 1/8, Bb3 1/4 (2/4-Takt)
+      const sequence = [
+        { f: 130.81, d: SIXTEENTH },
+        { f: 146.83, d: SIXTEENTH },
+        { f: 196.00, d: EIGHTH },
+        { f: 233.08, d: QUARTER }
       ];
+
+      // In Startzeiten umwandeln
+      let currentTime = 0;
+      const notes = sequence.map(step => {
+        const note = { f: step.f, t: currentTime, d: step.d };
+        currentTime += step.d;
+        return note;
+      });
 
       notes.forEach(n => {
         const osc = audioContext.createOscillator();

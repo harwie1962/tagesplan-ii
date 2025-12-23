@@ -303,6 +303,30 @@
       font-weight:800;
       font-size:13px;
     }
+
+    .calorie-summary{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:0 0 18px;
+    }
+    .calorie-pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#0ea5e9 0%, #8b5cf6 55%, #22c55e 110%);
+      color:#fff;
+      font-weight:800;
+      box-shadow:0 10px 24px rgba(2,6,23,.18);
+    }
+    body.medical .calorie-pill{
+      background:linear-gradient(135deg,#4caf50 0%,#388e3c 100%);
+      box-shadow:none;
+    }
+    .calorie-label{ opacity:.85; font-weight:700; letter-spacing:.2px; }
+    .calorie-value{ font-size:16px; }
   </style>
 </head>
 
@@ -380,6 +404,7 @@
       </div>
 
       <div id="nextItem"></div>
+      <div class="calorie-summary" id="calorieSummary"></div>
 
       <h3 style="margin-bottom:18px;color:#111827;">📋 Tagesübersicht</h3>
       <div class="timeline" id="timeline"></div>
@@ -451,6 +476,7 @@
       setStatusPlanInfo();
       updateTimeline();
       updateNextItem();
+      updateCalorieSummary();
     }
 
     function setStatusPlanInfo(){
@@ -636,6 +662,7 @@
       lastNotifiedIndex = -1;
       updateTimeline();
       updateNextItem();
+      updateCalorieSummary();
     }
 
     function applyOffsetFromAnchor(){
@@ -651,6 +678,7 @@
       lastNotifiedIndex = -1;
       updateTimeline();
       updateNextItem();
+      updateCalorieSummary();
     }
 
     function resetOffset(){
@@ -663,6 +691,7 @@
       lastNotifiedIndex = -1;
       updateTimeline();
       updateNextItem();
+      updateCalorieSummary();
     }
 
     function shiftAfternoon(delta){
@@ -670,6 +699,7 @@
       lastNotifiedIndex = -1;
       updateTimeline();
       updateNextItem();
+      updateCalorieSummary();
     }
 
     function resetAfternoonShift(){
@@ -677,6 +707,7 @@
       lastNotifiedIndex = -1;
       updateTimeline();
       updateNextItem();
+      updateCalorieSummary();
     }
 
     // =========================================================
@@ -791,6 +822,56 @@
             ${nextItem.description ? `${nextItem.description}<br>` : ""}
             ${nextItem.calories > 0 ? `<br>📊 ${nextItem.calories} kcal` : ""}
           </div>
+        </div>
+      `;
+    }
+
+    function calculateCalorieTotals(){
+      if (!Array.isArray(schedule) || !schedule.length) return null;
+
+      const total = schedule.reduce((sum, item) => sum + (parseInt(item.calories, 10) || 0), 0);
+      const currentMinutes = getCurrentMinutes();
+
+      const sorted = schedule
+        .map(item => ({ item, eff: getEffectiveItemMinutes(item) }))
+        .sort((a, b) => a.eff - b.eff);
+
+      const completed = sorted.reduce((sum, entry) => {
+        const kcal = parseInt(entry.item.calories, 10) || 0;
+        return entry.eff <= currentMinutes ? sum + kcal : sum;
+      }, 0);
+
+      const remaining = Math.max(total - completed, 0);
+      return { total, completed, remaining };
+    }
+
+    function updateCalorieSummary(){
+      const summary = document.getElementById("calorieSummary");
+      if (!summary) return;
+
+      if (!Array.isArray(schedule) || !schedule.length){
+        summary.innerHTML = "";
+        return;
+      }
+
+      const totals = calculateCalorieTotals();
+      if (!totals){
+        summary.innerHTML = "";
+        return;
+      }
+
+      summary.innerHTML = `
+        <div class="calorie-pill">
+          <span class="calorie-label">Gesamt</span>
+          <span class="calorie-value">${totals.total} kcal</span>
+        </div>
+        <div class="calorie-pill">
+          <span class="calorie-label">Erledigt</span>
+          <span class="calorie-value">${totals.completed} kcal</span>
+        </div>
+        <div class="calorie-pill">
+          <span class="calorie-label">Offen</span>
+          <span class="calorie-value">${totals.remaining} kcal</span>
         </div>
       `;
     }
@@ -931,6 +1012,7 @@
       loadOffset();
       initDaySwitch();
       updateTime();
+      updateCalorieSummary();
 
       if (("Notification" in window) && Notification.permission === "default"){
         const a = document.getElementById("notificationAlert");
@@ -970,6 +1052,7 @@
         }
 
         updateNextItem();
+        updateCalorieSummary();
         checkForNotifications();
         if (!isScrolling) updateTimeline();
       }, 10000);
@@ -979,4 +1062,3 @@
   </script>
 </body>
 </html>
-

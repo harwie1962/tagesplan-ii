@@ -275,6 +275,37 @@
     .panel h3{ margin-bottom:10px; color:#0b1220; font-size:15px; }
     body.medical .panel{ background:#fff; }
     body.medical .panel h3{ color:#1b5e20; }
+    .panel-top{
+      margin-bottom:16px;
+      background:#f8fafc;
+      border:1px solid rgba(255,255,255,.25);
+      box-shadow:0 10px 28px rgba(2,6,23,.25);
+      text-align:left;
+    }
+    body.medical .panel-top{
+      background:#fff;
+      border:0;
+      box-shadow:0 12px 30px rgba(46,125,50,.32);
+    }
+    .panel-top summary{
+      cursor:pointer;
+      list-style:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      font-weight:800;
+      color:#0b1220;
+      font-size:15px;
+    }
+    .panel-top summary::-webkit-details-marker{ display:none; }
+    .panel-top .chevron{
+      font-size:14px;
+      opacity:.8;
+      transition:transform .2s ease;
+    }
+    .panel-top[open] .chevron{ transform:rotate(90deg); }
+    .panel-top .panel-content{ margin-top:12px; }
 
     .row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px; }
     .row:first-of-type{ margin-top:0; }
@@ -333,6 +364,44 @@
 <body>
   <div class="container">
     <div class="header">
+      <details class="panel panel-top" id="offsetPanel" open>
+        <summary>
+          ⏱️ Verschlafen-Modus (Zeitversatz)
+          <span class="chevron">▶</span>
+        </summary>
+        <div class="panel-content">
+          <div class="row">
+            <label for="anchorTime">Ich bin aufgestanden um</label>
+            <input type="time" id="anchorTime" placeholder="07:30" />
+            <button class="btn btn-primary" onclick="applyOffsetFromAnchor()">Offset setzen</button>
+            <button class="btn btn-secondary" onclick="resetOffset()">Offset zurücksetzen</button>
+          </div>
+
+          <div class="row">
+            <input type="checkbox" id="applyAllDay" onchange="toggleApplyAllDay()" />
+            <label for="applyAllDay" style="cursor:pointer;">
+              Offset auf <strong>alle</strong> Zeiten anwenden (sonst nur morgens bis 12:00)
+            </label>
+          </div>
+
+          <div class="row" style="align-items:center;">
+            <span class="small-pill" title="Verschiebt Termine AB 12:00 (Mittag + alles danach)">
+              🌙 Nachmittag (ab 12:00): <span id="afternoonLabel">0 min</span>
+            </span>
+            <button class="btn btn-primary" onclick="shiftAfternoon(-15)">−15</button>
+            <button class="btn btn-primary" onclick="shiftAfternoon(+15)">+15</button>
+            <button class="btn btn-secondary" onclick="resetAfternoonShift()">Reset</button>
+          </div>
+
+          <div class="hint">
+            <div>• Standard: Morgen-Offset wirkt nur auf Zeiten <code>vor 12:00</code>.</div>
+            <div>• Haken an: Morgen-Offset wirkt auf <code>alle</code> Zeiten.</div>
+            <div>• Zusätzlich kannst du <strong>ab 12:00</strong> alles nach vorn/hinten schieben (−15 / +15).</div>
+            <div>• Speichert automatisch im Browser (localStorage).</div>
+          </div>
+        </div>
+      </details>
+
       <h1>🍽️ Dein Tagesplan</h1>
       <div class="current-time" id="currentTime">00:00:00</div>
       <div class="status" id="status">Lädt...</div>
@@ -361,40 +430,6 @@
         <button class="btn btn-primary" onclick="requestNotificationPermission()" style="margin-top:10px;">
           Benachrichtigungen aktivieren
         </button>
-      </div>
-
-      <div class="panel">
-        <h3>⏱️ Verschlafen-Modus (Zeitversatz)</h3>
-
-        <div class="row">
-          <label for="anchorTime">Ich bin aufgestanden um</label>
-          <input type="time" id="anchorTime" />
-          <button class="btn btn-primary" onclick="applyOffsetFromAnchor()">Offset setzen</button>
-          <button class="btn btn-secondary" onclick="resetOffset()">Offset zurücksetzen</button>
-        </div>
-
-        <div class="row">
-          <input type="checkbox" id="applyAllDay" onchange="toggleApplyAllDay()" />
-          <label for="applyAllDay" style="cursor:pointer;">
-            Offset auf <strong>alle</strong> Zeiten anwenden (sonst nur morgens bis 12:00)
-          </label>
-        </div>
-
-        <div class="row" style="align-items:center;">
-          <span class="small-pill" title="Verschiebt Termine AB 12:00 (Mittag + alles danach)">
-            🌙 Nachmittag (ab 12:00): <span id="afternoonLabel">0 min</span>
-          </span>
-          <button class="btn btn-primary" onclick="shiftAfternoon(-15)">−15</button>
-          <button class="btn btn-primary" onclick="shiftAfternoon(+15)">+15</button>
-          <button class="btn btn-secondary" onclick="resetAfternoonShift()">Reset</button>
-        </div>
-
-        <div class="hint">
-          <div>• Standard: Morgen-Offset wirkt nur auf Zeiten <code>vor 12:00</code>.</div>
-          <div>• Haken an: Morgen-Offset wirkt auf <code>alle</code> Zeiten.</div>
-          <div>• Zusätzlich kannst du <strong>ab 12:00</strong> alles nach vorn/hinten schieben (−15 / +15).</div>
-          <div>• Speichert automatisch im Browser (localStorage).</div>
-        </div>
       </div>
 
       <div class="controls">

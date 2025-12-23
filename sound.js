@@ -24,7 +24,11 @@ window.Sound = (function () {
         { f: 130.81, d: SIXTEENTH },
         { f: 146.83, d: SIXTEENTH },
         { f: 196.00, d: EIGHTH },
-        { f: 233.08, d: QUARTER }
+        { f: 233.08, d: QUARTER },
+        { f: 130.81, d: SIXTEENTH },
+        { f: 146.83, d: SIXTEENTH },
+        { f: 196.00, d: EIGHTH },
+        { f: 130.81, d: QUARTER }
       ];
 
       // In Startzeiten umwandeln

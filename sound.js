@@ -21,15 +21,27 @@ window.Sound = (function () {
 
       // Neue Tonfolge: C3 1/16, D3 1/16, G3 1/8, Bb3 1/4 (2/4-Takt)
       const sequence = [
-        { f: 130.81, d: SIXTEENTH },
-        { f: 146.83, d: SIXTEENTH },
-        { f: 196.00, d: EIGHTH },
-        { f: 233.08, d: QUARTER },
-        { f: 130.81, d: SIXTEENTH },
-        { f: 146.83, d: SIXTEENTH },
-        { f: 196.00, d: EIGHTH },
-        { f: 130.81, d: QUARTER }
-      ];
+  // Takt 1
+  { f: 392.00, d: EIGHTH }, // G4
+  { f: 349.23, d: EIGHTH }, // F4
+  { f: 392.00, d: EIGHTH }, // G4
+  { f: 415.30, d: EIGHTH }, // Ab4
+
+  // Takt 2
+  { f: 466.16, d: EIGHTH }, // Bb4
+  { f: 523.25, d: EIGHTH }, // C5
+  { f: 587.33, d: EIGHTH }, // D5
+  { f: 622.25, d: EIGHTH }, // Eb5
+
+  // Takt 3
+  { f: 698.46, d: EIGHTH }, // F5
+  { f: 622.25, d: EIGHTH }, // Eb5
+  { f: 587.33, d: EIGHTH }, // D5
+  { f: 523.25, d: EIGHTH }, // C5
+
+  // Schlusston (gebunden, langer Halt)
+  { f: 622.25, d: WHOLE }  // Eb5 (Liegeton)
+];
 
       // In Startzeiten umwandeln
       let currentTime = 0;

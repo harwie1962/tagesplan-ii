@@ -12,36 +12,34 @@ window.Sound = (function () {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === "suspended") audioContext.resume();
 
-      const VOLUME = 0.70;
-      const TYPE = "triangle";
-      const BPM = 80;
-      const QUARTER = 60 / BPM; // Dauer einer 1/4-Note bei 80 BPM
-      const SIXTEENTH = QUARTER / 4;
-      const EIGHTH = QUARTER / 2;
+const VOLUME = 0.70;
+const TYPE = "triangle";
 
-      // Neue Tonfolge: C3 1/16, D3 1/16, G3 1/8, Bb3 1/4 (2/4-Takt)
-      const sequence = [
-  // Takt 1
-  { f: 392.00, d: EIGHTH }, // G4
-  { f: 349.23, d: EIGHTH }, // F4
-  { f: 392.00, d: EIGHTH }, // G4
-  { f: 415.30, d: EIGHTH }, // Ab4
+const BPM = 94;
+const QUARTER = 60 / BPM;
+const SIXTEENTH = QUARTER / 4;
+const EIGHTH = QUARTER / 2;
+const WHOLE = QUARTER * 4;
 
-  // Takt 2
-  { f: 466.16, d: EIGHTH }, // Bb4
-  { f: 523.25, d: EIGHTH }, // C5
-  { f: 587.33, d: EIGHTH }, // D5
-  { f: 622.25, d: EIGHTH }, // Eb5
+const sequence = [
+  { f: 392.00, d: EIGHTH },
+  { f: 349.23, d: EIGHTH },
+  { f: 392.00, d: EIGHTH },
+  { f: 415.30, d: EIGHTH },
 
-  // Takt 3
-  { f: 698.46, d: EIGHTH }, // F5
-  { f: 622.25, d: EIGHTH }, // Eb5
-  { f: 587.33, d: EIGHTH }, // D5
-  { f: 523.25, d: EIGHTH }, // C5
+  { f: 466.16, d: EIGHTH },
+  { f: 523.25, d: EIGHTH },
+  { f: 587.33, d: EIGHTH },
+  { f: 622.25, d: EIGHTH },
 
-  // Schlusston (gebunden, langer Halt)
-  { f: 622.25, d: WHOLE }  // Eb5 (Liegeton)
+  { f: 698.46, d: EIGHTH },
+  { f: 622.25, d: EIGHTH },
+  { f: 587.33, d: EIGHTH },
+  { f: 523.25, d: EIGHTH },
+
+  { f: 622.25, d: WHOLE }
 ];
+
 
       // In Startzeiten umwandeln
       let currentTime = 0;

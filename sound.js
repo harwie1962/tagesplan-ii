@@ -1,13 +1,14 @@
 // assets/sound.js
-// Polyphoner WebAudio-Player (mehrstimmig, 4 Stimmen möglich)
-// Eingabeformat: pro Stimme eine Folge von Steps mit Notennamen + Beat-Dauer.
-// Beat = Viertelnote (Quarter). Tempo: QUARTER = 60/BPM.
+// Generated from MusicXML (.mxl): Emotion-Piano 1
+// Tempo (from score): 121 BPM
+// Polyphonic playback: 4 voices (staff/voice): (1/1), (1/2), (2/5), (2/6)
 
 window.Sound = (function () {
   let enabled = true;
-
-  // AudioContext wiederverwenden (nicht bei jedem Play neu erzeugen)
   let ctx = null;
+
+  function setEnabled(v) { enabled = !!v; }
+  function isEnabled() { return enabled; }
 
   function getCtx() {
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -15,151 +16,259 @@ window.Sound = (function () {
     return ctx;
   }
 
-  function setEnabled(v) { enabled = !!v; }
-  function isEnabled() { return enabled; }
-
-  // ---------- Musik-Parameter ----------
+  // Synth params
   const TYPE = "triangle";
 
-  // Contrapunctus I: im Bild steht ♪ = 54
-  const BPM = 54;
-  const QUARTER = 60 / BPM;
-  const EIGHTH = QUARTER / 2;
-  const SIXTEENTH = QUARTER / 4;
-  const HALF = QUARTER * 2;
-  const WHOLE = QUARTER * 4;
+  // Per-voice mix (tweak as you like)
+  const VOICES = [
+    { name: "RH-V1", volume: 0.26, pan: -0.20 }, // staff 1 voice 1
+    { name: "RH-V2", volume: 0.22, pan:  0.05 }, // staff 1 voice 2
+    { name: "LH-V5", volume: 0.25, pan:  0.10 }, // staff 2 voice 5
+    { name: "LH-V6", volume: 0.28, pan:  0.25 }, // staff 2 voice 6
+  ];
 
-  // ---------- Hilfen: Note -> Frequenz ----------
-  // Notennamen: "C4", "Bb3", "F#5" etc. (b = flat, # = sharp)
-  function noteToFreq(note) {
-    if (note == null) return 0;
+  // NOTE: Each event is { f: frequencyHz, t: startSeconds, d: durationSeconds }
+  const SCORE = [
+    // Voice 0: staff 1 voice 1
+    [
+    { f: 440.00, t: 1.98347, d: 0.49587 },
+    { f: 440.00, t: 3.96694, d: 0.49587 },
+    { f: 440.00, t: 5.95041, d: 0.49587 },
+    { f: 349.23, t: 6.94215, d: 0.49587 },
+    { f: 587.33, t: 7.93388, d: 0.49587 },
+    { f: 293.66, t: 8.42975, d: 0.24793 },
+    { f: 440.00, t: 8.67769, d: 0.24793 },
+    { f: 349.23, t: 8.92562, d: 0.24793 },
+    { f: 293.66, t: 9.17355, d: 0.24793 },
+    { f: 440.00, t: 9.42149, d: 0.24793 },
+    { f: 349.23, t: 9.66942, d: 0.24793 },
+    { f: 440.00, t: 9.91736, d: 0.49587 },
+    { f: 349.23, t: 11.90083, d: 0.24793 },
+    { f: 293.66, t: 12.14876, d: 0.24793 },
+    { f: 220.00, t: 12.39669, d: 0.24793 },
+    { f: 293.66, t: 12.64463, d: 0.24793 },
+    { f: 349.23, t: 12.89256, d: 0.24793 },
+    { f: 440.00, t: 13.14050, d: 0.24793 },
+    { f: 587.33, t: 13.38843, d: 0.24793 },
+    { f: 440.00, t: 13.63636, d: 0.24793 },
+    { f: 493.88, t: 13.88430, d: 0.24793 },
+    { f: 440.00, t: 14.13223, d: 0.24793 },
+    { f: 415.30, t: 14.38017, d: 0.24793 },
+    { f: 369.99, t: 14.62810, d: 0.24793 },
+    { f: 329.63, t: 14.87603, d: 0.24793 },
+    { f: 293.66, t: 15.12397, d: 0.24793 },
+    { f: 261.63, t: 15.37190, d: 0.24793 },
+    { f: 246.94, t: 15.61983, d: 0.24793 },
+    { f: 220.00, t: 15.86777, d: 0.24793 },
+    { f: 329.63, t: 16.11570, d: 0.24793 },
+    { f: 277.18, t: 16.36364, d: 0.24793 },
+    { f: 440.00, t: 16.61157, d: 0.24793 },
+    { f: 329.63, t: 16.85950, d: 0.24793 },
+    { f: 277.18, t: 17.10744, d: 0.24793 },
+    { f: 440.00, t: 17.35537, d: 0.24793 },
+    { f: 392.00, t: 17.60331, d: 0.24793 },
+    { f: 440.00, t: 17.85124, d: 0.24793 },
+    { f: 349.23, t: 18.09917, d: 0.24793 },
+    { f: 293.66, t: 18.34711, d: 0.24793 },
+    { f: 440.00, t: 18.59504, d: 0.24793 },
+    { f: 349.23, t: 18.84298, d: 0.24793 },
+    { f: 293.66, t: 19.09091, d: 0.24793 },
+    { f: 466.16, t: 19.33884, d: 0.24793 },
+    { f: 293.66, t: 19.58678, d: 0.24793 },
+    { f: 440.00, t: 19.83471, d: 0.49587 },
+    { f: 349.23, t: 22.06612, d: 0.24793 },
+    { f: 293.66, t: 22.31405, d: 0.24793 },
+    { f: 440.00, t: 22.56198, d: 0.24793 },
+    { f: 349.23, t: 22.80992, d: 0.49587 },
+    { f: 523.25, t: 23.30579, d: 0.24793 },
+    { f: 349.23, t: 23.55372, d: 0.24793 },
+    { f: 587.33, t: 23.80165, d: 0.49587 },
+    { f: 440.00, t: 25.78512, d: 0.49587 },
+    { f: 293.66, t: 26.28099, d: 0.24793 },
+    { f: 440.00, t: 26.52893, d: 0.24793 },
+    { f: 349.23, t: 26.77686, d: 0.24793 },
+    { f: 293.66, t: 27.02479, d: 0.24793 },
+    { f: 392.00, t: 27.27273, d: 0.24793 },
+    { f: 440.00, t: 27.52066, d: 0.24793 },
+    { f: 293.66, t: 28.01653, d: 0.24793 },
+    { f: 220.00, t: 28.26446, d: 0.24793 },
+    { f: 293.66, t: 28.51240, d: 0.24793 },
+    { f: 349.23, t: 28.76033, d: 0.24793 },
+    { f: 440.00, t: 29.00826, d: 0.24793 },
+    { f: 587.33, t: 29.25620, d: 0.24793 },
+    { f: 440.00, t: 29.50413, d: 0.24793 },
+    { f: 493.88, t: 29.75207, d: 0.24793 },
+    { f: 440.00, t: 30.00000, d: 0.24793 },
+    { f: 415.30, t: 30.24793, d: 0.24793 },
+    { f: 369.99, t: 30.49587, d: 0.24793 },
+    { f: 329.63, t: 30.74380, d: 0.24793 },
+    { f: 293.66, t: 30.99174, d: 0.24793 },
+    { f: 261.63, t: 31.23967, d: 0.24793 },
+    { f: 246.94, t: 31.48760, d: 0.24793 },
+    { f: 220.00, t: 31.73554, d: 0.24793 },
+    { f: 329.63, t: 31.98347, d: 0.24793 },
+    { f: 277.18, t: 32.23140, d: 0.24793 },
+    { f: 440.00, t: 32.47934, d: 0.24793 },
+    { f: 329.63, t: 32.72727, d: 0.24793 },
+    { f: 277.18, t: 32.97521, d: 0.24793 },
+    { f: 440.00, t: 33.22314, d: 0.24793 },
+    { f: 392.00, t: 33.47107, d: 0.24793 },
+    { f: 440.00, t: 33.71901, d: 0.24793 },
+    { f: 349.23, t: 33.96694, d: 0.24793 },
+    { f: 293.66, t: 34.21488, d: 0.24793 },
+    { f: 440.00, t: 34.46281, d: 0.24793 },
+    { f: 349.23, t: 34.71074, d: 0.49587 },
+    ],
+    // Voice 1: staff 1 voice 2
+    [
+    { f: 349.23, t: 2.23140, d: 0.24793 },
+    { f: 293.66, t: 2.47934, d: 0.24793 },
+    { f: 440.00, t: 2.72727, d: 0.24793 },
+    { f: 349.23, t: 2.97521, d: 0.24793 },
+    { f: 293.66, t: 3.22314, d: 0.24793 },
+    { f: 466.16, t: 3.47107, d: 0.24793 },
+    { f: 293.66, t: 3.71901, d: 0.24793 },
+    { f: 349.23, t: 4.21488, d: 0.24793 },
+    { f: 293.66, t: 4.46281, d: 0.24793 },
+    { f: 440.00, t: 4.71074, d: 0.24793 },
+    { f: 349.23, t: 4.95868, d: 0.24793 },
+    { f: 293.66, t: 5.20661, d: 0.24793 },
+    { f: 440.00, t: 5.45455, d: 0.24793 },
+    { f: 349.23, t: 5.70248, d: 0.24793 },
+    { f: 349.23, t: 6.19835, d: 0.24793 },
+    { f: 293.66, t: 6.44628, d: 0.24793 },
+    { f: 440.00, t: 6.69421, d: 0.24793 },
+    { f: 293.66, t: 7.19008, d: 0.24793 },
+    { f: 523.25, t: 7.43802, d: 0.24793 },
+    { f: 349.23, t: 7.68595, d: 0.24793 },
+    { f: 349.23, t: 8.18182, d: 0.74380 },
+    { f: 349.23, t: 10.16529, d: 0.24793 },
+    { f: 293.66, t: 10.41322, d: 0.24793 },
+    { f: 440.00, t: 10.66116, d: 0.24793 },
+    { f: 349.23, t: 10.90909, d: 0.24793 },
+    { f: 293.66, t: 11.15702, d: 0.24793 },
+    { f: 392.00, t: 11.40496, d: 0.24793 },
+    { f: 440.00, t: 11.65289, d: 0.24793 },
+    { f: 349.23, t: 20.08264, d: 0.24793 },
+    { f: 293.66, t: 20.33058, d: 0.24793 },
+    { f: 440.00, t: 20.57851, d: 0.24793 },
+    { f: 349.23, t: 20.82645, d: 0.24793 },
+    { f: 293.66, t: 21.07438, d: 0.24793 },
+    { f: 440.00, t: 21.32231, d: 0.24793 },
+    { f: 349.23, t: 21.57025, d: 0.24793 },
+    { f: 440.00, t: 21.81818, d: 0.49587 },
+    { f: 293.66, t: 23.05785, d: 0.74380 },
+    { f: 349.23, t: 24.04959, d: 0.24793 },
+    { f: 293.66, t: 24.29752, d: 0.24793 },
+    { f: 440.00, t: 24.54545, d: 0.24793 },
+    { f: 349.23, t: 24.79339, d: 0.24793 },
+    { f: 293.66, t: 25.04132, d: 0.24793 },
+    { f: 440.00, t: 25.28926, d: 0.24793 },
+    { f: 349.23, t: 25.53719, d: 0.24793 },
+    { f: 349.23, t: 26.03306, d: 0.74380 },
+    { f: 349.23, t: 27.76860, d: 0.49587 },
+    ],
+    // Voice 2: staff 2 voice 5
+    [
+    { f: 146.83, t: 1.98347, d: 0.99174 },
+    { f: 220.00, t: 3.22314, d: 0.74380 },
+    { f: 138.59, t: 3.96694, d: 0.49587 },
+    { f: 220.00, t: 5.20661, d: 0.24793 },
+    { f: 130.81, t: 5.95041, d: 0.99174 },
+    { f: 220.00, t: 7.19008, d: 0.24793 },
+    { f: 174.61, t: 8.42975, d: 1.48760 },
+    { f: 174.61, t: 10.41322, d: 0.99174 },
+    { f: 220.00, t: 10.90909, d: 0.49587 },
+    { f: 174.61, t: 11.40496, d: 0.49587 },
+    { f: 174.61, t: 12.39669, d: 0.99174 },
+    { f: 220.00, t: 12.89256, d: 0.49587 },
+    { f: 174.61, t: 13.38843, d: 0.49587 },
+    { f: 164.81, t: 14.87603, d: 0.99174 },
+    { f: 164.81, t: 16.36364, d: 0.99174 },
+    { f: 220.00, t: 16.85950, d: 0.49587 },
+    { f: 174.61, t: 18.34711, d: 0.99174 },
+    { f: 220.00, t: 18.84298, d: 0.99174 },
+    { f: 174.61, t: 20.33058, d: 0.99174 },
+    { f: 220.00, t: 20.82645, d: 0.49587 },
+    { f: 174.61, t: 21.32231, d: 0.49587 },
+    { f: 174.61, t: 22.31405, d: 0.99174 },
+    { f: 220.00, t: 22.80992, d: 0.49587 },
+    { f: 174.61, t: 24.54545, d: 0.74380 },
+    { f: 174.61, t: 26.52893, d: 0.74380 },
+    { f: 174.61, t: 28.26446, d: 0.99174 },
+    { f: 220.00, t: 28.76033, d: 0.49587 },
+    { f: 174.61, t: 29.25620, d: 0.49587 },
+    { f: 164.81, t: 30.74380, d: 0.99174 },
+    { f: 164.81, t: 32.23140, d: 1.48760 },
+    { f: 220.00, t: 32.72727, d: 0.99174 },
+    { f: 146.83, t: 33.71901, d: 0.74380 },
+    { f: 174.61, t: 34.46281, d: 0.24793 },
+    { f: 220.00, t: 34.71074, d: 0.49587 },
+    ],
+    // Voice 3: staff 2 voice 6
+    [
+    { f: 174.61, t: 2.97521, d: 0.99174 },
+    { f: 174.61, t: 4.95868, d: 0.99174 },
+    { f: 174.61, t: 6.94215, d: 0.99174 },
+    { f: 123.47, t: 7.93388, d: 0.49587 },
+    { f: 220.00, t: 8.92562, d: 0.49587 },
+    { f: 116.54, t: 9.91736, d: 0.99174 },
+    { f: 110.00, t: 11.90083, d: 0.99174 },
+    { f: 103.83, t: 13.88430, d: 0.99174 },
+    { f: 207.65, t: 15.12397, d: 0.24793 },
+    { f: 110.00, t: 15.86777, d: 0.99174 },
+    { f: 146.83, t: 17.85124, d: 1.48760 },
+    { f: 138.59, t: 19.83471, d: 0.99174 },
+    { f: 130.81, t: 21.81818, d: 1.48760 },
+    { f: 123.47, t: 23.80165, d: 0.99174 },
+    { f: 220.00, t: 24.79339, d: 0.99174 },
+    { f: 116.54, t: 25.78512, d: 0.49587 },
+    { f: 220.00, t: 26.77686, d: 0.49587 },
+    { f: 110.00, t: 27.76860, d: 0.99174 },
+    { f: 103.83, t: 29.75207, d: 0.49587 },
+    { f: 207.65, t: 30.99174, d: 0.24793 },
+    { f: 110.00, t: 31.73554, d: 0.99174 },
+    ],
+  ];
 
-    // Unterstützt auch Akkorde: ["C4","E4","G4"]
-    if (Array.isArray(note)) return note.map(noteToFreq);
-
-    const m = /^([A-G])([b#]?)(-?\d+)$/.exec(note.trim());
-    if (!m) throw new Error("Ungültige Note: " + note);
-
-    const letter = m[1];
-    const accidental = m[2] || "";
-    const octave = parseInt(m[3], 10);
-
-    const semitoneMap = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-    let n = semitoneMap[letter];
-    if (accidental === "#") n += 1;
-    if (accidental === "b") n -= 1;
-
-    // MIDI: C4 = 60, A4 = 69
-    const midi = (octave + 1) * 12 + n;
-    return 440 * Math.pow(2, (midi - 69) / 12);
-  }
-
-  // ---------- Builder: steps -> Events mit Startzeiten ----------
-  // steps: [{ p:"F4", b:4 }, { p:null, b:1 }, { p:["C4","E4"], b:2 }, ...]
-  // p = pitch (string | array | null), b = beats (Viertel-Schläge)
-  function buildVoice(steps) {
-    let tBeats = 0;
-    const events = [];
-    for (const s of steps) {
-      const beats = s.b ?? 1;
-      const pitch = s.p ?? null;
-
-      if (pitch !== null) {
-        events.push({
-          f: noteToFreq(pitch),
-          t: tBeats * QUARTER,
-          d: beats * QUARTER
-        });
-      }
-      tBeats += beats;
-    }
-    return events;
-  }
-
-  // ---------- Synth: eine Note/Akkord schedulen ----------
-  function scheduleEvent(ctx, ev, opts) {
+  function scheduleOne(ctx, ev, settings) {
     const start = ctx.currentTime + ev.t;
-    const dur = ev.d;
 
-    // ev.f kann Zahl (Mononote) oder Array (Akkord) sein
-    const freqs = Array.isArray(ev.f) ? ev.f : [ev.f];
-
-    for (const freq of freqs) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      // optional panning
-      let nodeOut = gain;
-      if (opts.panner) {
-        gain.connect(opts.panner);
-        nodeOut = opts.panner;
-      }
-      nodeOut.connect(ctx.destination);
-
-      osc.type = opts.type;
-      osc.frequency.value = freq;
-
-      osc.connect(gain);
-
-      // Hüllkurve: kurzer Attack, dann Decay
-      const A = 0.005;                 // Attack
-      const R = Math.min(0.06, dur*0.25); // Release (kurz)
-      const peak = opts.volume;
-
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(peak, start + A);
-
-      // leichtes Halten, dann Release
-      const holdEnd = Math.max(start + A, start + dur - R);
-      gain.gain.setValueAtTime(peak, holdEnd);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-
-      osc.start(start);
-      osc.stop(start + dur + 0.02);
+    // optional stereo panner
+    let panner = null;
+    if (ctx.createStereoPanner) {
+      panner = ctx.createStereoPanner();
+      panner.pan.value = settings.pan;
+      panner.connect(ctx.destination);
     }
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = TYPE;
+    osc.frequency.value = ev.f;
+
+    osc.connect(gain);
+    if (panner) {
+      gain.connect(panner);
+    } else {
+      gain.connect(ctx.destination);
+    }
+
+    // Envelope (click-safe)
+    const A = 0.004;                      // attack
+    const R = Math.min(0.06, ev.d * 0.25); // release
+    const peak = settings.volume;
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(peak, start + A);
+    const holdEnd = Math.max(start + A, start + ev.d - R);
+    gain.gain.setValueAtTime(peak, holdEnd);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + ev.d);
+
+    osc.start(start);
+    osc.stop(start + ev.d + 0.02);
   }
-
-  // ---------- Stimmen (Platzhalter!) ----------
-  // Du wolltest "mehrstimmig" + "gesamten Soundcode".
-  // Diese Score-Daten sind bewusst als EDITIERBARE Vorlage angelegt.
-  // Trage hier pro Stimme die Noten aus deiner Partitur ein.
-
-  // Stimme 1 (Sopran) – Beispiel (erste Takte grob als Platzhalter)
-  const SOPRANO_STEPS = [
-    // Takt 1–2: (hier ersetzen durch echte Noten aus deinem Bild)
-    { p: "F4", b: 4 },   // ganze Note
-    { p: "A4", b: 4 },   // ganze Note
-    // ...
-  ];
-
-  // Stimme 2 (Alt)
-  const ALTO_STEPS = [
-    { p: "C4", b: 4 },
-    { p: "F4", b: 4 },
-    // ...
-  ];
-
-  // Stimme 3 (Tenor)
-  const TENOR_STEPS = [
-    { p: "A3", b: 4 },
-    { p: "C4", b: 4 },
-    // ...
-  ];
-
-  // Stimme 4 (Bass)
-  const BASS_STEPS = [
-    { p: "F3", b: 4 },
-    { p: "F3", b: 4 },
-    // ...
-  ];
-
-  // Panning/Level pro Stimme (frei anpassbar)
-  const VOICE_SETTINGS = [
-    { name: "Soprano", volume: 0.26, pan: -0.35 },
-    { name: "Alto",    volume: 0.22, pan: -0.10 },
-    { name: "Tenor",   volume: 0.22, pan:  0.10 },
-    { name: "Bass",    volume: 0.28, pan:  0.35 }
-  ];
 
   function play() {
     if (!enabled) return;
@@ -167,33 +276,11 @@ window.Sound = (function () {
     try {
       const audioContext = getCtx();
 
-      // Stimmen bauen
-      const voices = [
-        buildVoice(SOPRANO_STEPS),
-        buildVoice(ALTO_STEPS),
-        buildVoice(TENOR_STEPS),
-        buildVoice(BASS_STEPS)
-      ];
-
-      // pro Stimme optional Panner erzeugen
-      const pannners = VOICE_SETTINGS.map(vs => {
-        const p = audioContext.createStereoPanner ? audioContext.createStereoPanner() : null;
-        if (p) p.pan.value = vs.pan;
-        return p;
-      });
-
-      // alle Events schedulen
-      for (let i = 0; i < voices.length; i++) {
-        const evs = voices[i];
-        const vs = VOICE_SETTINGS[i];
-        const panner = pannners[i];
-
-        for (const ev of evs) {
-          scheduleEvent(audioContext, ev, {
-            type: TYPE,
-            volume: vs.volume,
-            panner
-          });
+      for (let i = 0; i < SCORE.length; i++) {
+        const voice = SCORE[i];
+        const settings = VOICES[i] || { volume: 0.25, pan: 0 };
+        for (const ev of voice) {
+          scheduleOne(audioContext, ev, settings);
         }
       }
     } catch (e) {

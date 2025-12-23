@@ -425,6 +425,23 @@
     const DAY_OVERRIDE_KEY = "scheduleDayOverride"; // "auto" oder "mon".."sun"
     const MANUAL_UNTIL_KEY = "scheduleManualUntilTs";
 
+    function applyManualDayTimeout(){
+      const saved = (localStorage.getItem(DAY_OVERRIDE_KEY) || "auto").toLowerCase();
+      const until = parseInt(localStorage.getItem(MANUAL_UNTIL_KEY) || "0", 10);
+      const expired = saved !== "auto" && (until <= 0 || Date.now() >= until);
+
+      if (expired){
+        localStorage.setItem(DAY_OVERRIDE_KEY, "auto");
+        localStorage.removeItem(MANUAL_UNTIL_KEY);
+      }
+      return expired;
+    }
+
+    function getStoredDayOverride(){
+      applyManualDayTimeout();
+      return (localStorage.getItem(DAY_OVERRIDE_KEY) || "auto").toLowerCase();
+    }
+
     function getTodayKey(){
       return DAY_MAP[new Date().getDay()];
     }
@@ -436,7 +453,7 @@
       if (DAY_MAP.includes(q)) return q;
 
       // 2) localStorage override
-      const saved = (localStorage.getItem(DAY_OVERRIDE_KEY) || "auto").toLowerCase();
+      const saved = getStoredDayOverride();
       if (saved === "auto") return getTodayKey();
       if (DAY_MAP.includes(saved)) return saved;
 
@@ -480,11 +497,24 @@
     }
 
     function setStatusPlanInfo(){
-      const saved = (localStorage.getItem(DAY_OVERRIDE_KEY) || "auto").toLowerCase();
+      const saved = getStoredDayOverride();
       const effective = getSelectedDayKey();
       const label = (saved === "auto" ? `AUTO (${effective.toUpperCase()})` : saved.toUpperCase());
       const status = document.getElementById("status");
       if (status) status.textContent = `Plan: ${label}`;
+    }
+
+    function syncDayButtonState(){
+      const wrap = document.getElementById("daySwitch");
+      if (!wrap) return;
+
+      const btns = Array.from(wrap.querySelectorAll(".day-btn"));
+      const saved = getStoredDayOverride();
+
+      btns.forEach(b => b.classList.remove("active"));
+      const activeKey = (saved === "auto") ? "auto" : saved;
+      const el = wrap.querySelector(`.day-btn[data-day="${activeKey}"]`);
+      if (el) el.classList.add("active");
     }
 
     function initDaySwitch(){
@@ -492,14 +522,6 @@
       if (!wrap) return;
 
       const btns = Array.from(wrap.querySelectorAll(".day-btn"));
-
-      const setActiveButtons = () => {
-        const saved = (localStorage.getItem(DAY_OVERRIDE_KEY) || "auto").toLowerCase();
-        btns.forEach(b => b.classList.remove("active"));
-        const activeKey = (saved === "auto") ? "auto" : saved;
-        const el = wrap.querySelector(`.day-btn[data-day="${activeKey}"]`);
-        if (el) el.classList.add("active");
-      };
 
       btns.forEach(btn => {
         if (btn.dataset.bound === "1") return;
@@ -517,7 +539,7 @@
             localStorage.setItem(MANUAL_UNTIL_KEY, String(Date.now() + 60000));
           }
 
-          setActiveButtons();
+          syncDayButtonState();
 
           try{
             await loadPlanForCurrentSelection();
@@ -527,7 +549,7 @@
         });
       });
 
-      setActiveButtons();
+      syncDayButtonState();
     }
 
     function showPlanError(e){
@@ -1011,6 +1033,8 @@
       loadSoundPreference();
       loadOffset();
       initDaySwitch();
+      const resetOnLoad = applyManualDayTimeout();
+      if (resetOnLoad) syncDayButtonState();
       updateTime();
       updateCalorieSummary();
 
@@ -1029,26 +1053,18 @@
         updateTime();
 
         // Auto-Reset prüfen (manueller Tag läuft nach 1 Minute aus)
-        const saved = (localStorage.getItem(DAY_OVERRIDE_KEY) || "auto").toLowerCase();
-        const until = parseInt(localStorage.getItem(MANUAL_UNTIL_KEY) || "0", 10);
+        const wasResetToAuto = applyManualDayTimeout();
 
-        if (saved !== "auto" && until > 0 && Date.now() >= until) {
-          localStorage.setItem(DAY_OVERRIDE_KEY, "auto");
-          localStorage.removeItem(MANUAL_UNTIL_KEY);
-
-          // Buttons aktiv setzen
-          const wrap = document.getElementById("daySwitch");
-          if (wrap) {
-            Array.from(wrap.querySelectorAll(".day-btn")).forEach(b => b.classList.remove("active"));
-            const autoBtn = wrap.querySelector(`.day-btn[data-day="auto"]`);
-            if (autoBtn) autoBtn.classList.add("active");
-          }
+        if (wasResetToAuto) {
+          syncDayButtonState();
 
           try{
             await loadPlanForCurrentSelection();
           } catch(e){
             showPlanError(e);
           }
+
+          setStatusPlanInfo();
         }
 
         updateNextItem();

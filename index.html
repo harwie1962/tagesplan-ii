@@ -442,6 +442,8 @@
       <div class="sound-toggle">
         <input type="checkbox" id="soundToggle" checked onchange="toggleSound()" />
         <label for="soundToggle" style="cursor:pointer;">🔊 Signalton aktiviert</label>
+        <input type="checkbox" id="muteToggle" onchange="toggleMuteForThreeMinutes()" />
+        <label for="muteToggle" style="cursor:pointer;">🔇 3 Minuten stumm</label>
       </div>
     </div>
 
@@ -647,6 +649,8 @@
 
     let lastNotifiedIndex = -1;
     let soundEnabled = true;
+    let muteUiTimerId = null;
+    const MUTE_DURATION_MS = 180000;
     let acknowledgedItems = new Set();
     let activeAlarmIndex = null;
     let alarmTimerId = null;
@@ -1098,6 +1102,33 @@
       }
     }
 
+    function updateMuteToggleLabel(isMuted){
+      const label = document.querySelector('label[for="muteToggle"]');
+      if (!label) return;
+      label.textContent = isMuted ? "🔇 3 Minuten stumm (aktiv)" : "🔇 3 Minuten stumm";
+    }
+
+    function toggleMuteForThreeMinutes(){
+      const el = document.getElementById("muteToggle");
+      const isMuted = !!(el && el.checked);
+
+      if (muteUiTimerId) clearTimeout(muteUiTimerId);
+
+      if (isMuted){
+        if (window.Sound) window.Sound.muteForMs(MUTE_DURATION_MS);
+        updateMuteToggleLabel(true);
+        muteUiTimerId = setTimeout(() => {
+          const toggle = document.getElementById("muteToggle");
+          if (toggle) toggle.checked = false;
+          updateMuteToggleLabel(false);
+          muteUiTimerId = null;
+        }, MUTE_DURATION_MS);
+      } else {
+        if (window.Sound) window.Sound.resetMute();
+        updateMuteToggleLabel(false);
+      }
+    }
+
     function scrollToNext(){
       if (!Array.isArray(schedule) || !schedule.length) return;
       const { nextIndex } = findCurrentAndNext();
@@ -1132,6 +1163,12 @@
       } else {
         if (window.Sound) window.Sound.setEnabled(true);
       }
+    }
+
+    function initMuteToggle(){
+      const t = document.getElementById("muteToggle");
+      if (t) t.checked = false;
+      updateMuteToggleLabel(false);
     }
 
     function startAlarmForIndex(index){
@@ -1197,6 +1234,7 @@
     async function start(){
       loadTheme();
       loadSoundPreference();
+      initMuteToggle();
       loadOffset();
       initDaySwitch();
       const resetOnLoad = applyManualDayTimeout();

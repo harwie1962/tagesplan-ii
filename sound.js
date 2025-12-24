@@ -6,9 +6,31 @@
 window.Sound = (function () {
   let enabled = true;
   let ctx = null;
+  let volumeMultiplier = 1;
+  let muteTimerId = null;
 
   function setEnabled(v) { enabled = !!v; }
   function isEnabled() { return enabled; }
+  function isMuted() { return volumeMultiplier === 0; }
+
+  function setVolumeMultiplier(value) {
+    volumeMultiplier = Math.max(0, Number(value) || 0);
+  }
+
+  function muteForMs(ms) {
+    setVolumeMultiplier(0);
+    if (muteTimerId) clearTimeout(muteTimerId);
+    muteTimerId = setTimeout(() => {
+      setVolumeMultiplier(1);
+      muteTimerId = null;
+    }, ms);
+  }
+
+  function resetMute() {
+    if (muteTimerId) clearTimeout(muteTimerId);
+    muteTimerId = null;
+    setVolumeMultiplier(1);
+  }
 
   function getCtx() {
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -258,13 +280,18 @@ window.Sound = (function () {
     // Envelope (click-safe)
     const A = 0.004;                      // attack
     const R = Math.min(0.06, ev.d * 0.25); // release
-    const peak = settings.volume;
+    const peak = settings.volume * volumeMultiplier;
 
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(peak, start + A);
-    const holdEnd = Math.max(start + A, start + ev.d - R);
-    gain.gain.setValueAtTime(peak, holdEnd);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + ev.d);
+    if (peak <= 0) {
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.setValueAtTime(0, start + ev.d);
+    } else {
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(peak, start + A);
+      const holdEnd = Math.max(start + A, start + ev.d - R);
+      gain.gain.setValueAtTime(peak, holdEnd);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + ev.d);
+    }
 
     osc.start(start);
     osc.stop(start + ev.d + 0.02);
@@ -288,5 +315,5 @@ window.Sound = (function () {
     }
   }
 
-  return { play, setEnabled, isEnabled };
+  return { play, setEnabled, isEnabled, muteForMs, resetMute, isMuted };
 })();

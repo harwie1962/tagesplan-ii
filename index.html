@@ -1170,23 +1170,15 @@
         .map((item, index) => ({ item, index, eff: getEffectiveItemMinutes(item) }))
         .sort((a, b) => a.eff - b.eff);
 
-      const upcoming = sorted.find(entry => {
+      const candidate = sorted.find(entry => {
         let minutesUntil = entry.eff - currentMinutes;
         if (minutesUntil < -720) minutesUntil += 1440;
         if (minutesUntil < 0) minutesUntil += 1440;
         return minutesUntil <= 2;
       });
 
-      if (upcoming && !acknowledgedItems.has(upcoming.index)){
-        startAlarmForIndex(upcoming.index);
-        return;
-      }
-
-      const dueItems = sorted.filter(entry => entry.eff <= currentMinutes);
-      const currentEntry = dueItems.length ? dueItems[dueItems.length - 1] : null;
-
-      if (currentEntry && !acknowledgedItems.has(currentEntry.index)){
-        startAlarmForIndex(currentEntry.index);
+      if (candidate && !acknowledgedItems.has(candidate.index)){
+        startAlarmForIndex(candidate.index);
       }
     }
 

@@ -224,6 +224,26 @@
     body.medical .timeline-item .description{ color:#102014; }
     .timeline-item .calories{ color:#2563eb; font-weight:800; margin-top:6px; font-size:12.5px; }
     body.medical .timeline-item .calories{ color:#1b5e20; }
+    .timeline-item .acknowledge{
+      margin-top:8px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12.5px;
+      color:#111827;
+      font-weight:700;
+    }
+    body.medical .timeline-item .acknowledge{ color:#102014; }
+    .timeline-item .acknowledge input{ width:18px; height:18px; cursor:pointer; }
+    .timeline-item.acknowledged{
+      opacity:.7;
+      background:#e9f7ef;
+      border-color:rgba(34,197,94,.35);
+    }
+    body.medical .timeline-item.acknowledged{
+      background:#dcedc8;
+      border-color:rgba(46,125,50,.35);
+    }
 
     .controls{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
 
@@ -528,6 +548,8 @@
       }
 
       setStatusPlanInfo();
+      loadAcknowledgements();
+      stopAlarm();
       updateTimeline();
       updateNextItem();
       updateCalorieSummary();
@@ -625,6 +647,9 @@
 
     let lastNotifiedIndex = -1;
     let soundEnabled = true;
+    let acknowledgedItems = new Set();
+    let activeAlarmIndex = null;
+    let alarmTimerId = null;
 
     function getTimeInMinutes(timeStr){
       const [h,m] = timeStr.split(":").map(Number);
@@ -670,6 +695,48 @@
     function getEffectiveItemTimeStr(item){
       const perOffset = getPerItemOffset(item);
       return minutesToHHMM(getTimeInMinutes(item.time) + perOffset);
+    }
+
+    function getAckStorageKey(){
+      const dayKey = getSelectedDayKey();
+      const dateStr = new Date().toISOString().split("T")[0];
+      return `scheduleAck-${dayKey}-${dateStr}`;
+    }
+
+    function loadAcknowledgements(){
+      acknowledgedItems = new Set();
+      const key = getAckStorageKey();
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      try{
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)){
+          parsed.forEach(index => acknowledgedItems.add(Number(index)));
+        }
+      } catch(e){
+        console.warn("Konnte Erledigt-Status nicht laden:", e);
+      }
+    }
+
+    function saveAcknowledgements(){
+      const key = getAckStorageKey();
+      localStorage.setItem(key, JSON.stringify(Array.from(acknowledgedItems)));
+    }
+
+    function setAcknowledged(index, checked){
+      if (checked){
+        acknowledgedItems.add(index);
+      } else {
+        acknowledgedItems.delete(index);
+      }
+      saveAcknowledgements();
+
+      const el = document.getElementById(`item-${index}`);
+      if (el) el.classList.toggle("acknowledged", checked);
+
+      if (checked && activeAlarmIndex === index){
+        stopAlarm();
+      }
     }
 
     function saveOffset(mins, anchorTimeStr){
@@ -825,6 +892,9 @@
 
         const effTime = getEffectiveItemTimeStr(item);
 
+        const isAcknowledged = acknowledgedItems.has(index);
+        if (isAcknowledged) div.classList.add("acknowledged");
+
         div.innerHTML = `
           <div class="time">${effTime} Uhr</div>
           <div class="description">
@@ -832,7 +902,17 @@
             ${item.description ? `<br>${item.description}` : ""}
           </div>
           ${item.calories > 0 ? `<div class="calories">📊 ${item.calories} kcal</div>` : ""}
+          <label class="acknowledge">
+            <input type="checkbox" class="ack-checkbox" data-index="${index}" ${isAcknowledged ? "checked" : ""} />
+            Erledigt
+          </label>
         `;
+        const checkbox = div.querySelector(".ack-checkbox");
+        if (checkbox){
+          checkbox.addEventListener("change", () => {
+            setAcknowledged(index, checkbox.checked);
+          });
+        }
         timeline.appendChild(div);
       });
     }
@@ -1005,6 +1085,7 @@
       soundEnabled = !!(el && el.checked);
       localStorage.setItem("soundEnabled", String(soundEnabled));
       if (window.Sound) window.Sound.setEnabled(soundEnabled);
+      if (!soundEnabled) stopAlarm();
 
       const label = document.querySelector('label[for="soundToggle"]');
       if (!label) return;
@@ -1050,6 +1131,62 @@
         if (label) label.textContent = soundEnabled ? "🔊 Signalton aktiviert" : "🔇 Signalton deaktiviert";
       } else {
         if (window.Sound) window.Sound.setEnabled(true);
+      }
+    }
+
+    function startAlarmForIndex(index){
+      if (!soundEnabled || !window.Sound) return;
+      if (activeAlarmIndex === index && alarmTimerId) return;
+
+      stopAlarm();
+      activeAlarmIndex = index;
+
+      window.Sound.play();
+      alarmTimerId = setInterval(() => {
+        if (!soundEnabled || !window.Sound) return;
+        window.Sound.play();
+      }, 30000);
+    }
+
+    function stopAlarm(){
+      if (alarmTimerId){
+        clearInterval(alarmTimerId);
+        alarmTimerId = null;
+      }
+      activeAlarmIndex = null;
+    }
+
+    function checkForRepeatingAlarm(){
+      if (!Array.isArray(schedule) || !schedule.length) return;
+      if (!soundEnabled) return;
+
+      if (activeAlarmIndex !== null){
+        if (acknowledgedItems.has(activeAlarmIndex)) stopAlarm();
+        return;
+      }
+
+      const currentMinutes = getCurrentMinutes();
+      const sorted = schedule
+        .map((item, index) => ({ item, index, eff: getEffectiveItemMinutes(item) }))
+        .sort((a, b) => a.eff - b.eff);
+
+      const upcoming = sorted.find(entry => {
+        let minutesUntil = entry.eff - currentMinutes;
+        if (minutesUntil < -720) minutesUntil += 1440;
+        if (minutesUntil < 0) minutesUntil += 1440;
+        return minutesUntil <= 2;
+      });
+
+      if (upcoming && !acknowledgedItems.has(upcoming.index)){
+        startAlarmForIndex(upcoming.index);
+        return;
+      }
+
+      const dueItems = sorted.filter(entry => entry.eff <= currentMinutes);
+      const currentEntry = dueItems.length ? dueItems[dueItems.length - 1] : null;
+
+      if (currentEntry && !acknowledgedItems.has(currentEntry.index)){
+        startAlarmForIndex(currentEntry.index);
       }
     }
 
@@ -1107,6 +1244,7 @@
         updateNextItem();
         updateCalorieSummary();
         checkForNotifications();
+        checkForRepeatingAlarm();
         if (!isScrolling) updateTimeline();
       }, 10000);
     }
